@@ -14,9 +14,9 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            background: #ffffff;
             min-height: 100vh;
-            color: #e0e0e0;
+            color: #333;
             padding: 20px;
         }
         
@@ -33,14 +33,11 @@
         h1 {
             font-size: 2.2rem;
             margin-bottom: 10px;
-            background: linear-gradient(90deg, #00d4aa, #7b68ee);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: #1a1a2e;
         }
         
         .subtitle {
-            color: #888;
+            color: #666;
             font-size: 1rem;
         }
         
@@ -61,15 +58,15 @@
         
         .control-group label {
             font-size: 0.8rem;
-            color: #888;
+            color: #666;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
         
         select, input[type="text"] {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #e0e0e0;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            color: #333;
             padding: 10px 14px;
             font-size: 0.95rem;
             border-radius: 6px;
@@ -78,12 +75,12 @@
         }
         
         select:hover, input[type="text"]:hover {
-            border-color: rgba(0, 212, 170, 0.5);
+            border-color: #00a896;
         }
         
         select:focus, input[type="text"]:focus {
             outline: none;
-            border-color: #00d4aa;
+            border-color: #00a896;
         }
         
         input[type="text"] {
@@ -91,13 +88,13 @@
         }
         
         input[type="text"]::placeholder {
-            color: #666;
+            color: #999;
         }
         
         button {
-            background: linear-gradient(135deg, #00d4aa, #00a896);
+            background: #00a896;
             border: none;
-            color: #1a1a2e;
+            color: #fff;
             padding: 12px 28px;
             font-size: 1rem;
             font-weight: 600;
@@ -107,12 +104,12 @@
         }
         
         button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(0, 212, 170, 0.4);
+            background: #008f7a;
+            box-shadow: 0 5px 20px rgba(0, 168, 150, 0.3);
         }
         
         button:disabled {
-            background: #444;
+            background: #ccc;
             cursor: not-allowed;
         }
         
@@ -121,26 +118,26 @@
             padding: 15px;
             margin-bottom: 20px;
             border-radius: 8px;
-            background: rgba(255, 255, 255, 0.05);
+            background: #f5f5f5;
         }
         
         .status.loading {
-            color: #ffd700;
+            color: #b8860b;
         }
         
         .status.error {
-            color: #ff6b6b;
-            background: rgba(255, 107, 107, 0.1);
+            color: #dc3545;
+            background: #fee;
         }
         
         .status.success {
-            color: #00d4aa;
+            color: #00a896;
         }
         
         .progress-bar {
             width: 100%;
             height: 6px;
-            background: #333;
+            background: #ddd;
             border-radius: 3px;
             margin-top: 10px;
             overflow: hidden;
@@ -148,7 +145,7 @@
         
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #00d4aa, #7b68ee);
+            background: #00a896;
             border-radius: 3px;
             transition: width 0.3s ease;
         }
@@ -166,10 +163,10 @@
         }
         
         .chart-container {
-            background: rgba(255, 255, 255, 0.03);
+            background: #fff;
             border-radius: 12px;
             padding: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid #eee;
         }
         
         #heatmap {
@@ -178,18 +175,18 @@
         }
         
         .stats-panel {
-            background: rgba(255, 255, 255, 0.03);
+            background: #fff;
             border-radius: 12px;
             padding: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid #eee;
             height: fit-content;
         }
         
         .stats-panel h2 {
             font-size: 1.3rem;
             margin-bottom: 20px;
-            color: #00d4aa;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: #00a896;
+            border-bottom: 1px solid #eee;
             padding-bottom: 10px;
         }
         
@@ -197,16 +194,17 @@
             display: flex;
             justify-content: space-between;
             padding: 8px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid #f0f0f0;
         }
         
         .stat-label {
-            color: #888;
+            color: #666;
         }
         
         .stat-value {
             font-weight: 600;
             font-family: 'Monaco', 'Consolas', monospace;
+            color: #333;
         }
         
         .pairs-section {
@@ -216,7 +214,7 @@
         .pairs-section h3 {
             font-size: 1rem;
             margin-bottom: 12px;
-            color: #7b68ee;
+            color: #555;
         }
         
         .pair-item {
@@ -227,7 +225,7 @@
         }
         
         .pair-name {
-            color: #aaa;
+            color: #666;
             font-family: 'Monaco', 'Consolas', monospace;
         }
         
@@ -237,30 +235,30 @@
         }
         
         .pair-value.high {
-            color: #00d4aa;
+            color: #006400;
         }
         
         .pair-value.low {
-            color: #ff6b6b;
+            color: #8b0000;
         }
         
         .timestamp {
             margin-top: 20px;
             padding-top: 15px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid #eee;
             font-size: 0.8rem;
-            color: #666;
+            color: #999;
             text-align: center;
         }
         
         .error-list {
             margin-top: 15px;
             padding: 12px;
-            background: rgba(255, 107, 107, 0.1);
-            border: 1px solid rgba(255, 107, 107, 0.3);
+            background: #fee;
+            border: 1px solid #fcc;
             border-radius: 6px;
             font-size: 0.85rem;
-            color: #ff6b6b;
+            color: #dc3545;
         }
         
         .error-list-title {
@@ -271,10 +269,10 @@
         .legend-note {
             margin-top: 15px;
             padding: 12px;
-            background: rgba(255, 255, 255, 0.05);
+            background: #f9f9f9;
             border-radius: 6px;
             font-size: 0.85rem;
-            color: #888;
+            color: #666;
         }
         
         .legend-note span {
@@ -398,8 +396,8 @@
         const BASE_SYMBOLS = [
             'BTC', 'ETH', 'BNB', 'XRP', 'SOL',
             'ADA', 'DOGE', 'TRX', 'AVAX', 'LINK',
-            'DOT', 'MATIC', 'UNI', 'LTC', 'ATOM',
-            'XLM', 'HYPE', 'FIL', 'APT', 'ARB'
+            'DOT', 'CC', 'UNI', 'LTC', 'ATOM',
+            'XLM', 'TON', 'FIL', 'APT', 'ARB'
         ];
         
         const BINANCE_API = 'https://api.binance.com/api/v3/klines';
@@ -587,7 +585,7 @@
             return { mean, median, min, max, top5, bottom5 };
         }
         
-        function renderHeatmap(matrix, symbols) {
+        function renderHeatmap(matrix, symbols, stats) {
             // Create custom colorscale: dark red (0) -> white (0.5) -> dark green (1)
             const colorscale = [
                 [0, 'rgb(139, 0, 0)'],
@@ -629,7 +627,7 @@
                 }
             }];
             
-            // Add annotations for values
+            // Add annotations for values in cells
             const annotations = [];
             for (let i = 0; i < symbols.length; i++) {
                 for (let j = 0; j <= i; j++) {
@@ -647,6 +645,43 @@
                 }
             }
             
+            // Add summary stats in the upper right negative space
+            const n = symbols.length;
+            let summaryText = '<b>CORRELATION SUMMARY</b><br>' +
+                '─────────────────────<br>' +
+                `Mean: ${stats.mean.toFixed(3)}<br>` +
+                `Median: ${stats.median.toFixed(3)}<br>` +
+                `Min: ${stats.min.toFixed(3)}<br>` +
+                `Max: ${stats.max.toFixed(3)}<br><br>` +
+                '<b>Most Correlated:</b><br>';
+            
+            stats.top5.forEach(p => {
+                summaryText += `${p.pair}: ${p.corr.toFixed(3)}<br>`;
+            });
+            
+            summaryText += '<br><b>Least Correlated:</b><br>';
+            stats.bottom5.forEach(p => {
+                summaryText += `${p.pair}: ${p.corr.toFixed(3)}<br>`;
+            });
+            
+            // Position annotation in upper-right area (roughly middle of masked triangle)
+            annotations.push({
+                x: symbols[Math.floor(n * 0.75)],
+                y: symbols[Math.floor(n * 0.25)],
+                text: summaryText,
+                showarrow: false,
+                font: {
+                    family: 'Monaco, Consolas, monospace',
+                    size: 10,
+                    color: '#333'
+                },
+                align: 'left',
+                bgcolor: 'rgba(255, 255, 255, 0.9)',
+                bordercolor: '#ddd',
+                borderwidth: 1,
+                borderpad: 8
+            });
+            
             const layout = {
                 title: '',
                 xaxis: {
@@ -657,10 +692,10 @@
                     autorange: 'reversed'
                 },
                 annotations: annotations,
-                paper_bgcolor: 'rgba(0,0,0,0)',
-                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: '#fff',
+                plot_bgcolor: '#fff',
                 font: {
-                    color: '#e0e0e0'
+                    color: '#333'
                 },
                 margin: {
                     l: 80,
@@ -782,8 +817,8 @@
             // Compute statistics
             const stats = computeStats(matrix, successfulSymbols);
             
-            // Render heatmap
-            renderHeatmap(matrix, successfulSymbols);
+            // Render heatmap with stats
+            renderHeatmap(matrix, successfulSymbols, stats);
             
             // Update stats panel
             updateStats(stats);
