@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Correlation Matrix</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #00d4aa, #7b68ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            color: #888;
+            font-size: 1rem;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #00d4aa, #00a896);
+            border: none;
+            color: #1a1a2e;
+            padding: 12px 28px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 212, 170, 0.4);
+        }
+        
+        button:disabled {
+            background: #444;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .status.loading {
+            color: #ffd700;
+        }
+        
+        .status.error {
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+        }
+        
+        .status.success {
+            color: #00d4aa;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4aa, #7b68ee);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 25px;
+        }
+        
+        @media (max-width: 1100px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .chart-container {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        #heatmap {
+            width: 100%;
+            height: 700px;
+        }
+        
+        .stats-panel {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            height: fit-content;
+        }
+        
+        .stats-panel h2 {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #00d4aa;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .stat-label {
+            color: #888;
+        }
+        
+        .stat-value {
+            font-weight: 600;
+            font-family: 'Monaco', 'Consolas', monospace;
+        }
+        
+        .pairs-section {
+            margin-top: 25px;
+        }
+        
+        .pairs-section h3 {
+            font-size: 1rem;
+            margin-bottom: 12px;
+            color: #7b68ee;
+        }
+        
+        .pair-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 0.9rem;
+        }
+        
+        .pair-name {
+            color: #aaa;
+            font-family: 'Monaco', 'Consolas', monospace;
+        }
+        
+        .pair-value {
+            font-weight: 600;
+            font-family: 'Monaco', 'Consolas', monospace;
+        }
+        
+        .pair-value.high {
+            color: #00d4aa;
+        }
+        
+        .pair-value.low {
+            color: #ff6b6b;
+        }
+        
+        .timestamp {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.8rem;
+            color: #666;
+            text-align: center;
+        }
+        
+        .legend-note {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: #888;
+        }
+        
+        .legend-note span {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+        
+        .legend-note .high-corr {
+            background: #006400;
+        }
+        
+        .legend-note .mid-corr {
+            background: #ffffff;
+            border: 1px solid #ccc;
+        }
+        
+        .legend-note .low-corr {
+            background: #8b0000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Crypto Correlation Matrix</h1>
+            <p class="subtitle">Top 20 Tokens • Hourly Returns • Last 30 Days</p>
+        </header>
+        
+        <div class="controls">
+            <button id="refreshBtn" onclick="fetchAndRender()">Generate Correlation Matrix</button>
+        </div>
+        
+        <div class="status" id="status">
+            Click the button above to fetch data and generate the correlation matrix.
+        </div>
+        
+        <div class="main-content">
+            <div class="chart-container">
+                <div id="heatmap"></div>
+            </div>
+            
+            <div class="stats-panel" id="statsPanel" style="display: none;">
+                <h2>Correlation Summary</h2>
+                
+                <div class="stat-row">
+                    <span class="stat-label">Mean</span>
+                    <span class="stat-value" id="statMean">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Median</span>
+                    <span class="stat-value" id="statMedian">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Min</span>
+                    <span class="stat-value" id="statMin">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Max</span>
+                    <span class="stat-value" id="statMax">-</span>
+                </div>
+                
+                <div class="pairs-section">
+                    <h3>Most Correlated Pairs</h3>
+                    <div id="topPairs"></div>
+                </div>
+                
+                <div class="pairs-section">
+                    <h3>Least Correlated Pairs</h3>
+                    <div id="bottomPairs"></div>
+                </div>
+                
+                <div class="legend-note">
+                    <span class="high-corr"></span> +1.0 (high)
+                    <span class="mid-corr" style="margin-left: 10px;"></span> +0.5 (mid)
+                    <span class="low-corr" style="margin-left: 10px;"></span> 0.0 (low)
+                </div>
+                
+                <div class="timestamp" id="timestamp"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SYMBOLS = [
+            'BTC', 'ETH', 'BNB', 'XRP', 'SOL',
+            'ADA', 'DOGE', 'TRX', 'AVAX', 'LINK',
+            'DOT', 'MATIC', 'UNI', 'LTC', 'ATOM',
+            'XLM', 'HYPE', 'FIL', 'APT', 'ARB'
+        ];
+        
+        const BINANCE_API = 'https://api.binance.com/api/v3/klines';
+        
+        function setStatus(message, type = '') {
+            const status = document.getElementById('status');
+            status.className = 'status ' + type;
+            status.innerHTML = message;
+        }
+        
+        async function fetchOHLCV(symbol, days = 30) {
+            const endTime = Date.now();
+            const startTime = endTime - (days * 24 * 60 * 60 * 1000);
+            const pair = `${symbol}USDT`;
+            
+            let allCandles = [];
+            let currentStart = startTime;
+            
+            while (currentStart < endTime) {
+                const url = `${BINANCE_API}?symbol=${pair}&interval=1h&startTime=${currentStart}&limit=1000`;
+                
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    if (data.length === 0) break;
+                    
+                    allCandles = allCandles.concat(data);
+                    currentStart = data[data.length - 1][0] + 1;
+                    
+                    // Small delay to avoid rate limits
+                    await new Promise(r => setTimeout(r, 50));
+                } catch (e) {
+                    console.error(`Error fetching ${symbol}:`, e);
+                    return null;
+                }
+            }
+            
+            // Extract close prices with timestamps
+            return allCandles.map(c => ({
+                timestamp: c[0],
+                close: parseFloat(c[4])
+            }));
+        }
+        
+        function calculateReturns(prices) {
+            const returns = [];
+            for (let i = 1; i < prices.length; i++) {
+                returns.push({
+                    timestamp: prices[i].timestamp,
+                    return: (prices[i].close - prices[i - 1].close) / prices[i - 1].close
+                });
+            }
+            return returns;
+        }
+        
+        function calculateCorrelation(x, y) {
+            const n = x.length;
+            if (n === 0) return 0;
+            
+            const meanX = x.reduce((a, b) => a + b, 0) / n;
+            const meanY = y.reduce((a, b) => a + b, 0) / n;
+            
+            let numerator = 0;
+            let denomX = 0;
+            let denomY = 0;
+            
+            for (let i = 0; i < n; i++) {
+                const dx = x[i] - meanX;
+                const dy = y[i] - meanY;
+                numerator += dx * dy;
+                denomX += dx * dx;
+                denomY += dy * dy;
+            }
+            
+            const denom = Math.sqrt(denomX * denomY);
+            return denom === 0 ? 0 : numerator / denom;
+        }
+        
+        function alignReturns(allReturns, symbols) {
+            // Find common timestamps
+            const timestampSets = symbols.map((sym, i) => 
+                new Set(allReturns[i].map(r => r.timestamp))
+            );
+            
+            let commonTimestamps = [...timestampSets[0]];
+            for (let i = 1; i < timestampSets.length; i++) {
+                commonTimestamps = commonTimestamps.filter(t => timestampSets[i].has(t));
+            }
+            
+            commonTimestamps.sort((a, b) => a - b);
+            
+            // Build aligned return arrays
+            const aligned = symbols.map((sym, i) => {
+                const returnMap = new Map(allReturns[i].map(r => [r.timestamp, r.return]));
+                return commonTimestamps.map(t => returnMap.get(t));
+            });
+            
+            return aligned;
+        }
+        
+        function computeCorrelationMatrix(alignedReturns, symbols) {
+            const n = symbols.length;
+            const matrix = [];
+            
+            for (let i = 0; i < n; i++) {
+                const row = [];
+                for (let j = 0; j < n; j++) {
+                    if (i === j) {
+                        row.push(1);
+                    } else {
+                        row.push(calculateCorrelation(alignedReturns[i], alignedReturns[j]));
+                    }
+                }
+                matrix.push(row);
+            }
+            
+            return matrix;
+        }
+        
+        function computeStats(matrix, symbols) {
+            const pairs = [];
+            const n = symbols.length;
+            
+            for (let i = 0; i < n; i++) {
+                for (let j = i + 1; j < n; j++) {
+                    pairs.push({
+                        pair: `${symbols[i]}-${symbols[j]}`,
+                        corr: matrix[i][j]
+                    });
+                }
+            }
+            
+            const values = pairs.map(p => p.corr);
+            values.sort((a, b) => a - b);
+            
+            const mean = values.reduce((a, b) => a + b, 0) / values.length;
+            const median = values[Math.floor(values.length / 2)];
+            const min = values[0];
+            const max = values[values.length - 1];
+            
+            pairs.sort((a, b) => b.corr - a.corr);
+            const top5 = pairs.slice(0, 5);
+            const bottom5 = pairs.slice(-5).reverse();
+            
+            return { mean, median, min, max, top5, bottom5 };
+        }
+        
+        function renderHeatmap(matrix, symbols) {
+            // Create custom colorscale: dark red (0) -> white (0.5) -> dark green (1)
+            const colorscale = [
+                [0, 'rgb(139, 0, 0)'],
+                [0.25, 'rgb(200, 100, 100)'],
+                [0.5, 'rgb(255, 255, 255)'],
+                [0.75, 'rgb(100, 180, 100)'],
+                [1, 'rgb(0, 100, 0)']
+            ];
+            
+            // Mask upper triangle with null
+            const maskedMatrix = matrix.map((row, i) => 
+                row.map((val, j) => j > i ? null : val)
+            );
+            
+            // Format hover text
+            const hoverText = maskedMatrix.map((row, i) =>
+                row.map((val, j) => 
+                    val === null ? '' : `${symbols[i]} - ${symbols[j]}<br>Correlation: ${val.toFixed(3)}`
+                )
+            );
+            
+            const data = [{
+                z: maskedMatrix,
+                x: symbols,
+                y: symbols,
+                type: 'heatmap',
+                colorscale: colorscale,
+                zmin: 0,
+                zmax: 1,
+                hoverongaps: false,
+                hoverinfo: 'text',
+                text: hoverText,
+                showscale: true,
+                colorbar: {
+                    title: 'Correlation',
+                    titleside: 'right',
+                    tickvals: [0, 0.25, 0.5, 0.75, 1],
+                    ticktext: ['0.00', '0.25', '0.50', '0.75', '1.00']
+                }
+            }];
+            
+            // Add annotations for values
+            const annotations = [];
+            for (let i = 0; i < symbols.length; i++) {
+                for (let j = 0; j <= i; j++) {
+                    const val = matrix[i][j];
+                    annotations.push({
+                        x: symbols[j],
+                        y: symbols[i],
+                        text: val.toFixed(2),
+                        showarrow: false,
+                        font: {
+                            color: val > 0.3 && val < 0.7 ? '#000' : '#fff',
+                            size: 10
+                        }
+                    });
+                }
+            }
+            
+            const layout = {
+                title: '',
+                xaxis: {
+                    side: 'bottom',
+                    tickangle: -45
+                },
+                yaxis: {
+                    autorange: 'reversed'
+                },
+                annotations: annotations,
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: {
+                    color: '#e0e0e0'
+                },
+                margin: {
+                    l: 80,
+                    r: 80,
+                    t: 30,
+                    b: 100
+                }
+            };
+            
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                modeBarButtonsToRemove: ['lasso2d', 'select2d']
+            };
+            
+            Plotly.newPlot('heatmap', data, layout, config);
+        }
+        
+        function updateStats(stats) {
+            document.getElementById('statMean').textContent = stats.mean.toFixed(3);
+            document.getElementById('statMedian').textContent = stats.median.toFixed(3);
+            document.getElementById('statMin').textContent = stats.min.toFixed(3);
+            document.getElementById('statMax').textContent = stats.max.toFixed(3);
+            
+            const topPairsDiv = document.getElementById('topPairs');
+            topPairsDiv.innerHTML = stats.top5.map(p => `
+                <div class="pair-item">
+                    <span class="pair-name">${p.pair}</span>
+                    <span class="pair-value high">${p.corr.toFixed(3)}</span>
+                </div>
+            `).join('');
+            
+            const bottomPairsDiv = document.getElementById('bottomPairs');
+            bottomPairsDiv.innerHTML = stats.bottom5.map(p => `
+                <div class="pair-item">
+                    <span class="pair-name">${p.pair}</span>
+                    <span class="pair-value low">${p.corr.toFixed(3)}</span>
+                </div>
+            `).join('');
+            
+            document.getElementById('timestamp').textContent = 
+                `Last updated: ${new Date().toLocaleString()}`;
+            
+            document.getElementById('statsPanel').style.display = 'block';
+        }
+        
+        async function fetchAndRender() {
+            const btn = document.getElementById('refreshBtn');
+            btn.disabled = true;
+            btn.textContent = 'Fetching data...';
+            
+            const successfulSymbols = [];
+            const allReturns = [];
+            
+            for (let i = 0; i < SYMBOLS.length; i++) {
+                const symbol = SYMBOLS[i];
+                const progress = ((i + 1) / SYMBOLS.length * 100).toFixed(0);
+                
+                setStatus(`
+                    Fetching ${symbol}... (${i + 1}/${SYMBOLS.length})
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${progress}%"></div>
+                    </div>
+                `, 'loading');
+                
+                const prices = await fetchOHLCV(symbol);
+                
+                if (prices && prices.length > 100) {
+                    const returns = calculateReturns(prices);
+                    successfulSymbols.push(symbol);
+                    allReturns.push(returns);
+                } else {
+                    console.warn(`Skipping ${symbol}: insufficient data`);
+                }
+            }
+            
+            if (successfulSymbols.length < 2) {
+                setStatus('Error: Could not fetch enough data. Please try again.', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Retry';
+                return;
+            }
+            
+            setStatus('Computing correlations...', 'loading');
+            
+            // Align returns to common timestamps
+            const alignedReturns = alignReturns(allReturns, successfulSymbols);
+            
+            // Compute correlation matrix
+            const matrix = computeCorrelationMatrix(alignedReturns, successfulSymbols);
+            
+            // Compute statistics
+            const stats = computeStats(matrix, successfulSymbols);
+            
+            // Render heatmap
+            renderHeatmap(matrix, successfulSymbols);
+            
+            // Update stats panel
+            updateStats(stats);
+            
+            setStatus(`Successfully loaded ${successfulSymbols.length} tokens with ${alignedReturns[0].length} hourly data points.`, 'success');
+            
+            btn.disabled = false;
+            btn.textContent = 'Refresh Data';
+        }
+    </script>
+</body>
+</html>
