@@ -634,51 +634,85 @@
             // Create labels with Beta column
             const xLabels = ['β(ETH)', ...symbols];
             
-            // Build matrix with beta column prepended
+            // Build beta column data
             const betaColumn = symbols.map(sym => betas ? betas[sym] : null);
-            const extendedMatrix = matrix.map((row, i) => [betaColumn[i], ...row]);
-            
-            // Mask upper triangle with null (adjust for beta column)
-            const maskedMatrix = extendedMatrix.map((row, i) => 
-                row.map((val, j) => {
-                    if (j === 0) return val; // Beta column always visible
-                    return (j - 1) > i ? null : val; // Offset by 1 for correlation part
-                })
-            );
-            
-            // Format hover text
-            const hoverText = maskedMatrix.map((row, i) =>
-                row.map((val, j) => {
-                    if (val === null) return '';
-                    if (j === 0) return `${symbols[i]}<br>Beta to ETH: ${val.toFixed(3)}`;
-                    return `${symbols[i]} - ${symbols[j-1]}<br>Correlation: ${val.toFixed(3)}`;
-                })
-            );
-            
-            // Find beta min/max for scaling
             const betaValues = betaColumn.filter(b => b !== null);
-            const betaMin = Math.min(...betaValues);
             const betaMax = Math.max(...betaValues);
             
-            const data = [{
-                z: maskedMatrix,
-                x: xLabels,
-                y: symbols,
-                type: 'heatmap',
-                colorscale: colorscale,
-                zmin: 0,
-                zmax: 1,
-                hoverongaps: false,
-                hoverinfo: 'text',
-                text: hoverText,
-                showscale: true,
-                colorbar: {
-                    title: 'Correlation',
-                    titleside: 'right',
-                    tickvals: [0, 0.25, 0.5, 0.75, 1],
-                    ticktext: ['0.00', '0.25', '0.50', '0.75', '1.00']
+            // Build correlation matrix (without beta)
+            const maskedCorrelation = matrix.map((row, i) => 
+                row.map((val, j) => j > i ? null : val)
+            );
+            
+            // Correlation heatmap hover text
+            const corrHoverText = maskedCorrelation.map((row, i) =>
+                row.map((val, j) => 
+                    val === null ? '' : `${symbols[i]} - ${symbols[j]}<br>Correlation: ${val.toFixed(3)}`
+                )
+            );
+            
+            // Beta column hover text
+            const betaHoverText = symbols.map((sym, i) => 
+                `${sym}<br>Beta to ETH: ${betaColumn[i].toFixed(3)}`
+            );
+            
+            // Blue colorscale for beta: light blue (0) -> dark blue (max)
+            const betaColorscale = [
+                [0, 'rgb(240, 248, 255)'],
+                [0.25, 'rgb(180, 210, 255)'],
+                [0.5, 'rgb(100, 150, 255)'],
+                [0.75, 'rgb(50, 100, 200)'],
+                [1, 'rgb(0, 50, 150)']
+            ];
+            
+            const data = [
+                // Beta column trace
+                {
+                    z: betaColumn.map(b => [b]),
+                    x: ['β(ETH)'],
+                    y: symbols,
+                    type: 'heatmap',
+                    colorscale: betaColorscale,
+                    zmin: 0,
+                    zmax: betaMax,
+                    hoverongaps: false,
+                    hoverinfo: 'text',
+                    text: betaHoverText.map(t => [t]),
+                    showscale: true,
+                    colorbar: {
+                        title: 'Beta',
+                        titleside: 'right',
+                        x: -0.15,
+                        len: 0.5,
+                        y: 0.75
+                    },
+                    xaxis: 'x',
+                    yaxis: 'y'
+                },
+                // Correlation matrix trace
+                {
+                    z: maskedCorrelation,
+                    x: symbols,
+                    y: symbols,
+                    type: 'heatmap',
+                    colorscale: colorscale,
+                    zmin: 0,
+                    zmax: 1,
+                    hoverongaps: false,
+                    hoverinfo: 'text',
+                    text: corrHoverText,
+                    showscale: true,
+                    colorbar: {
+                        title: 'Correlation',
+                        titleside: 'right',
+                        x: 1.02,
+                        len: 0.5,
+                        y: 0.75
+                    },
+                    xaxis: 'x2',
+                    yaxis: 'y'
                 }
-            }];
+            ];
             
             // Add annotations for values in cells
             const annotations = [];
@@ -687,15 +721,20 @@
             for (let i = 0; i < symbols.length; i++) {
                 const beta = betaColumn[i];
                 if (beta !== null) {
+                    // Determine text color based on beta value
+                    const normalizedBeta = beta / betaMax;
+                    const textColor = normalizedBeta > 0.5 ? '#fff' : '#333';
                     annotations.push({
                         x: 'β(ETH)',
                         y: symbols[i],
                         text: beta.toFixed(2),
                         showarrow: false,
                         font: {
-                            color: '#333',
+                            color: textColor,
                             size: 10
-                        }
+                        },
+                        xref: 'x',
+                        yref: 'y'
                     });
                 }
             }
@@ -712,7 +751,9 @@
                         font: {
                             color: val > 0.3 && val < 0.7 ? '#000' : '#fff',
                             size: 10
-                        }
+                        },
+                        xref: 'x2',
+                        yref: 'y'
                     });
                 }
             }
@@ -751,14 +792,23 @@
                 bgcolor: 'rgba(255, 255, 255, 0.9)',
                 bordercolor: '#ddd',
                 borderwidth: 1,
-                borderpad: 8
+                borderpad: 8,
+                xref: 'x2',
+                yref: 'y'
             });
             
             const layout = {
                 title: '',
                 xaxis: {
+                    domain: [0, 0.06],
                     side: 'bottom',
                     tickangle: -45
+                },
+                xaxis2: {
+                    domain: [0.08, 1],
+                    side: 'bottom',
+                    tickangle: -45,
+                    anchor: 'y'
                 },
                 yaxis: {
                     autorange: 'reversed'
@@ -771,23 +821,10 @@
                 },
                 margin: {
                     l: 80,
-                    r: 80,
+                    r: 100,
                     t: 30,
                     b: 100
-                },
-                shapes: [{
-                    type: 'line',
-                    x0: 0.5,
-                    x1: 0.5,
-                    y0: -0.5,
-                    y1: symbols.length - 0.5,
-                    xref: 'x',
-                    yref: 'y',
-                    line: {
-                        color: '#333',
-                        width: 2
-                    }
-                }]
+                }
             };
             
             const config = {
