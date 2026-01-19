@@ -585,7 +585,43 @@
             return { mean, median, min, max, top5, bottom5 };
         }
         
-        function renderHeatmap(matrix, symbols, stats) {
+        function calculateBeta(assetReturns, benchmarkReturns) {
+            // Beta = Covariance(asset, benchmark) / Variance(benchmark)
+            const n = assetReturns.length;
+            if (n === 0) return 0;
+            
+            const meanAsset = assetReturns.reduce((a, b) => a + b, 0) / n;
+            const meanBenchmark = benchmarkReturns.reduce((a, b) => a + b, 0) / n;
+            
+            let covariance = 0;
+            let variance = 0;
+            
+            for (let i = 0; i < n; i++) {
+                const dAsset = assetReturns[i] - meanAsset;
+                const dBenchmark = benchmarkReturns[i] - meanBenchmark;
+                covariance += dAsset * dBenchmark;
+                variance += dBenchmark * dBenchmark;
+            }
+            
+            return variance === 0 ? 0 : covariance / variance;
+        }
+        
+        function computeBetas(alignedReturns, symbols) {
+            // Find ETH index
+            const ethIndex = symbols.indexOf('ETH');
+            if (ethIndex === -1) return null;
+            
+            const ethReturns = alignedReturns[ethIndex];
+            const betas = {};
+            
+            for (let i = 0; i < symbols.length; i++) {
+                betas[symbols[i]] = calculateBeta(alignedReturns[i], ethReturns);
+            }
+            
+            return betas;
+        }
+        
+        function renderHeatmap(matrix, symbols, stats, betas) {
             // Create custom colorscale: dark red (0) -> white (0.5) -> dark green (1)
             const colorscale = [
                 [0, 'rgb(139, 0, 0)'],
@@ -595,21 +631,38 @@
                 [1, 'rgb(0, 100, 0)']
             ];
             
-            // Mask upper triangle with null
-            const maskedMatrix = matrix.map((row, i) => 
-                row.map((val, j) => j > i ? null : val)
+            // Create labels with Beta column
+            const xLabels = ['β(ETH)', ...symbols];
+            
+            // Build matrix with beta column prepended
+            const betaColumn = symbols.map(sym => betas ? betas[sym] : null);
+            const extendedMatrix = matrix.map((row, i) => [betaColumn[i], ...row]);
+            
+            // Mask upper triangle with null (adjust for beta column)
+            const maskedMatrix = extendedMatrix.map((row, i) => 
+                row.map((val, j) => {
+                    if (j === 0) return val; // Beta column always visible
+                    return (j - 1) > i ? null : val; // Offset by 1 for correlation part
+                })
             );
             
             // Format hover text
             const hoverText = maskedMatrix.map((row, i) =>
-                row.map((val, j) => 
-                    val === null ? '' : `${symbols[i]} - ${symbols[j]}<br>Correlation: ${val.toFixed(3)}`
-                )
+                row.map((val, j) => {
+                    if (val === null) return '';
+                    if (j === 0) return `${symbols[i]}<br>Beta to ETH: ${val.toFixed(3)}`;
+                    return `${symbols[i]} - ${symbols[j-1]}<br>Correlation: ${val.toFixed(3)}`;
+                })
             );
+            
+            // Find beta min/max for scaling
+            const betaValues = betaColumn.filter(b => b !== null);
+            const betaMin = Math.min(...betaValues);
+            const betaMax = Math.max(...betaValues);
             
             const data = [{
                 z: maskedMatrix,
-                x: symbols,
+                x: xLabels,
                 y: symbols,
                 type: 'heatmap',
                 colorscale: colorscale,
@@ -629,6 +682,25 @@
             
             // Add annotations for values in cells
             const annotations = [];
+            
+            // Beta column annotations
+            for (let i = 0; i < symbols.length; i++) {
+                const beta = betaColumn[i];
+                if (beta !== null) {
+                    annotations.push({
+                        x: 'β(ETH)',
+                        y: symbols[i],
+                        text: beta.toFixed(2),
+                        showarrow: false,
+                        font: {
+                            color: '#333',
+                            size: 10
+                        }
+                    });
+                }
+            }
+            
+            // Correlation matrix annotations
             for (let i = 0; i < symbols.length; i++) {
                 for (let j = 0; j <= i; j++) {
                     const val = matrix[i][j];
@@ -666,7 +738,7 @@
             
             // Position annotation in upper-right area (roughly middle of masked triangle)
             annotations.push({
-                x: symbols[Math.floor(n * 0.75)],
+                x: symbols[Math.floor(n * 0.7)],
                 y: symbols[Math.floor(n * 0.25)],
                 text: summaryText,
                 showarrow: false,
@@ -702,7 +774,20 @@
                     r: 80,
                     t: 30,
                     b: 100
-                }
+                },
+                shapes: [{
+                    type: 'line',
+                    x0: 0.5,
+                    x1: 0.5,
+                    y0: -0.5,
+                    y1: symbols.length - 0.5,
+                    xref: 'x',
+                    yref: 'y',
+                    line: {
+                        color: '#333',
+                        width: 2
+                    }
+                }]
             };
             
             const config = {
@@ -814,11 +899,14 @@
             // Compute correlation matrix
             const matrix = computeCorrelationMatrix(alignedReturns, successfulSymbols);
             
+            // Compute betas to ETH
+            const betas = computeBetas(alignedReturns, successfulSymbols);
+            
             // Compute statistics
             const stats = computeStats(matrix, successfulSymbols);
             
-            // Render heatmap with stats
-            renderHeatmap(matrix, successfulSymbols, stats);
+            // Render heatmap with stats and betas
+            renderHeatmap(matrix, successfulSymbols, stats, betas);
             
             // Update stats panel
             updateStats(stats);
